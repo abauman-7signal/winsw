@@ -76,8 +76,8 @@ $@"<service>
                 // Spawn the test process
                 Process proc = new Process();
                 var ps = proc.StartInfo;
-                ps.FileName = "cmd.exe";
-                ps.Arguments = "/c pause";
+                ps.FileName = "powershell.exe";
+                ps.Arguments = "-Command Start-Sleep 60";
                 ps.UseShellExecute = false;
                 ps.RedirectStandardOutput = true;
                 ps.EnvironmentVariables[WinSWSystem.ENVVAR_NAME_SERVICE_ID] = winswId;
@@ -117,6 +117,8 @@ $@"<service>
                             Console.Error.WriteLine("Test: ProcessHelper failed to properly terminate process with ID=" + proc.Id);
                         }
                     }
+
+                    Console.WriteLine("----- exit code " + proc.ExitCode);
                 }
             }
         }
