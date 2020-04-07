@@ -77,7 +77,7 @@ $@"<service>
                 Process proc = new Process();
                 var ps = proc.StartInfo;
                 ps.FileName = "powershell.exe";
-                ps.Arguments = "-Command Write-Host '+++'; Start-Sleep 60; Write-Host '---'";
+                ps.Arguments = "-Command Start-Sleep 60";
                 ps.UseShellExecute = false;
                 ps.EnvironmentVariables[WinSWSystem.ENVVAR_NAME_SERVICE_ID] = winswId;
                 proc.Start();
