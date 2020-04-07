@@ -37,6 +37,10 @@ namespace winswTests.Util
                 }
                 else
                 {
+                    Console.WriteLine("+++++");
+                    Console.WriteLine(File.ReadAllText(filePath));
+                    Console.WriteLine("-----");
+
                     Assert.Fail("Wrong line in the parsed Set output file: " + line);
                 }
             }

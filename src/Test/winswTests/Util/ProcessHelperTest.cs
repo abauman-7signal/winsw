@@ -16,33 +16,36 @@ namespace winswTests.Util
         [Test]
         public void ShouldPropagateVariablesInUppercase()
         {
-            Environment.SetEnvironmentVariable("TEST_KEY", "TEST_VALUE");
-
-            var tmpDir = FilesystemTestHelper.CreateTmpDirectory();
-            string envFile = Path.Combine(tmpDir, "env.properties");
-            string scriptFile = Path.Combine(tmpDir, "printenv.bat");
-            File.WriteAllText(scriptFile, "set > " + envFile);
-
-            Process proc = new Process();
-            var ps = proc.StartInfo;
-            ps.FileName = scriptFile;
-
-            ProcessHelper.StartProcessAndCallbackForExit(proc);
-            var exited = proc.WaitForExit(5000);
-            if (!exited)
+            for (int i = 0; i < 10; i++)
             {
-                Assert.Fail("Process " + proc + " didn't exit after 5 seconds");
+                Environment.SetEnvironmentVariable("TEST_KEY", "TEST_VALUE");
+
+                var tmpDir = FilesystemTestHelper.CreateTmpDirectory();
+                string envFile = Path.Combine(tmpDir, "env.properties");
+                string scriptFile = Path.Combine(tmpDir, "printenv.bat");
+                File.WriteAllText(scriptFile, "set > " + envFile);
+
+                Process proc = new Process();
+                var ps = proc.StartInfo;
+                ps.FileName = scriptFile;
+
+                ProcessHelper.StartProcessAndCallbackForExit(proc);
+                var exited = proc.WaitForExit(5000);
+                if (!exited)
+                {
+                    Assert.Fail("Process " + proc + " didn't exit after 5 seconds");
+                }
+
+                // Check several veriables, which are expected to be in Uppercase
+                var envVars = FilesystemTestHelper.parseSetOutput(envFile);
+                string[] keys = new string[envVars.Count];
+                envVars.Keys.CopyTo(keys, 0);
+                string availableVars = "[" + string.Join(",", keys) + "]";
+                Assert.That(envVars.ContainsKey("TEST_KEY"), "No TEST_KEY in the injected vars: " + availableVars);
+
+                // And just ensure that the parsing logic is case-sensitive
+                Assert.That(!envVars.ContainsKey("test_key"), "Test error: the environment parsing logic is case-insensitive");
             }
-
-            // Check several veriables, which are expected to be in Uppercase
-            var envVars = FilesystemTestHelper.parseSetOutput(envFile);
-            string[] keys = new string[envVars.Count];
-            envVars.Keys.CopyTo(keys, 0);
-            string availableVars = "[" + string.Join(",", keys) + "]";
-            Assert.That(envVars.ContainsKey("TEST_KEY"), "No TEST_KEY in the injected vars: " + availableVars);
-
-            // And just ensure that the parsing logic is case-sensitive
-            Assert.That(!envVars.ContainsKey("test_key"), "Test error: the environment parsing logic is case-insensitive");
         }
 
         [Test]

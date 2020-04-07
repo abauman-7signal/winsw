@@ -67,54 +67,55 @@ $@"<service>
         [Test]
         public void ShouldKillTheSpawnedProcess()
         {
-            Assert.Ignore();
-
-            var winswId = "myAppWithRunaway";
-            var extensionId = "runawayProcessKiller";
-            var tmpDir = FilesystemTestHelper.CreateTmpDirectory();
-
-            // Spawn the test process
-            Process proc = new Process();
-            var ps = proc.StartInfo;
-            ps.FileName = "cmd.exe";
-            ps.Arguments = "/c pause";
-            ps.UseShellExecute = false;
-            ps.RedirectStandardOutput = true;
-            ps.EnvironmentVariables[WinSWSystem.ENVVAR_NAME_SERVICE_ID] = winswId;
-            proc.Start();
-
-            try
+            for (int i = 0; i < 10; i++)
             {
-                // Generate extension and ensure that the roundtrip is correct
-                var pidfile = Path.Combine(tmpDir, "process.pid");
-                var sd = ConfigXmlBuilder.create(id: winswId)
-                    .WithRunawayProcessKiller(new RunawayProcessKillerExtension(pidfile), extensionId)
-                    .ToServiceDescriptor();
-                WinSWExtensionManager manager = new WinSWExtensionManager(sd);
-                manager.LoadExtensions();
-                var extension = manager.Extensions[extensionId] as RunawayProcessKillerExtension;
-                Assert.IsNotNull(extension, "RunawayProcessKillerExtension should be loaded");
-                Assert.AreEqual(pidfile, extension.Pidfile, "PidFile should have been retained during the config roundtrip");
+                var winswId = "myAppWithRunaway";
+                var extensionId = "runawayProcessKiller";
+                var tmpDir = FilesystemTestHelper.CreateTmpDirectory();
 
-                // Inject PID
-                File.WriteAllText(pidfile, proc.Id.ToString());
-
-                // Try to terminate
-                Assert.That(!proc.HasExited, "Process " + proc + " has exited before the RunawayProcessKiller extension invocation");
-                _ = proc.StandardOutput.Read();
-                extension.OnWrapperStarted();
-                Assert.That(proc.HasExited, "Process " + proc + " should have been terminated by RunawayProcessKiller");
-            }
-            finally
-            {
-                if (!proc.HasExited)
+                // Spawn the test process
+                Process proc = new Process();
+                var ps = proc.StartInfo;
+                ps.FileName = "cmd.exe";
+                ps.Arguments = "/c pause";
+                ps.UseShellExecute = false;
+                ps.RedirectStandardOutput = true;
+                ps.EnvironmentVariables[WinSWSystem.ENVVAR_NAME_SERVICE_ID] = winswId;
+                proc.Start();
+                System.Threading.Thread.Sleep(5000);
+                try
                 {
-                    Console.Error.WriteLine("Test: Killing runaway process with ID=" + proc.Id);
-                    ProcessHelper.StopProcessAndChildren(proc.Id, TimeSpan.FromMilliseconds(100), false);
+                    // Generate extension and ensure that the roundtrip is correct
+                    var pidfile = Path.Combine(tmpDir, "process.pid");
+                    var sd = ConfigXmlBuilder.create(id: winswId)
+                        .WithRunawayProcessKiller(new RunawayProcessKillerExtension(pidfile), extensionId)
+                        .ToServiceDescriptor();
+                    WinSWExtensionManager manager = new WinSWExtensionManager(sd);
+                    manager.LoadExtensions();
+                    var extension = manager.Extensions[extensionId] as RunawayProcessKillerExtension;
+                    Assert.IsNotNull(extension, "RunawayProcessKillerExtension should be loaded");
+                    Assert.AreEqual(pidfile, extension.Pidfile, "PidFile should have been retained during the config roundtrip");
+
+                    // Inject PID
+                    File.WriteAllText(pidfile, proc.Id.ToString());
+
+                    // Try to terminate
+                    Assert.That(!proc.HasExited, "Process " + proc + " has exited before the RunawayProcessKiller extension invocation");
+                    _ = proc.StandardOutput.Read();
+                    extension.OnWrapperStarted();
+                    Assert.That(proc.HasExited, "Process " + proc + " should have been terminated by RunawayProcessKiller");
+                }
+                finally
+                {
                     if (!proc.HasExited)
                     {
-                        // The test is failed here anyway, but we add additional diagnostics info
-                        Console.Error.WriteLine("Test: ProcessHelper failed to properly terminate process with ID=" + proc.Id);
+                        Console.Error.WriteLine("Test: Killing runaway process with ID=" + proc.Id);
+                        ProcessHelper.StopProcessAndChildren(proc.Id, TimeSpan.FromMilliseconds(100), false);
+                        if (!proc.HasExited)
+                        {
+                            // The test is failed here anyway, but we add additional diagnostics info
+                            Console.Error.WriteLine("Test: ProcessHelper failed to properly terminate process with ID=" + proc.Id);
+                        }
                     }
                 }
             }
