@@ -77,9 +77,8 @@ $@"<service>
                 Process proc = new Process();
                 var ps = proc.StartInfo;
                 ps.FileName = "powershell.exe";
-                ps.Arguments = "-Command Start-Sleep 60";
+                ps.Arguments = "-Command Write-Host '+++'; Start-Sleep 60; Write-Host '---'";
                 ps.UseShellExecute = false;
-                ps.RedirectStandardOutput = true;
                 ps.EnvironmentVariables[WinSWSystem.ENVVAR_NAME_SERVICE_ID] = winswId;
                 proc.Start();
                 System.Threading.Thread.Sleep(5000);
@@ -101,7 +100,6 @@ $@"<service>
 
                     // Try to terminate
                     Assert.That(!proc.HasExited, "Process " + proc + " has exited before the RunawayProcessKiller extension invocation");
-                    _ = proc.StandardOutput.Read();
                     extension.OnWrapperStarted();
                     Assert.That(proc.HasExited, "Process " + proc + " should have been terminated by RunawayProcessKiller");
                 }
